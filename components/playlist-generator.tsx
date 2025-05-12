@@ -27,7 +27,6 @@ const genresList = [
 ]
 
 
-
 export default function PlaylistGenerator() {
   const [eventType, setEventType] = useState<string>("")
   const [genres, setGenres] = useState<string[]>([])
@@ -53,7 +52,7 @@ export default function PlaylistGenerator() {
       <div className="w-full max-w-3xl">
         {!showResults ? (
           <div className="flex flex-col items-center">
-            <h1 className="mb-2 text-center text-5xl font-bold tracking-tight text-violet-400">
+            <h1 className="mb-2 text-center text-4xl font-bold tracking-tight text-violet-400">
               Design your perfect playlist🎵
             </h1>
             <p className="mb-12 text-center text-violet-400">Fine-tune your sound</p>
@@ -63,7 +62,7 @@ export default function PlaylistGenerator() {
                 <div className="space-y-4">
                   <label className="text-lg font-medium text-violet-300">Event Type</label>
                   <Select value={eventType} onValueChange={setEventType}>
-                    <SelectTrigger className="h-14 w-full border-0 bg-zinc-800 text-base text-white hover:text-white focus:outline-none">
+                    <SelectTrigger className="h-14 w-full border-0 bg-zinc-800 text-base text-violet-300 focus:outline-none">
                       <SelectValue placeholder="Select event type" className="text-white" />
                     </SelectTrigger>
                     <SelectContent className="border-violet-900 bg-zinc-800 text-white">
@@ -99,7 +98,7 @@ export default function PlaylistGenerator() {
                         }
                       }}
                     >
-                      <SelectTrigger className="h-10 w-[120px] border-0 bg-zinc-800 text-base text-violet-300 hover:text-white focus:ring-violet-500">
+                      <SelectTrigger className="h-10 w-[120px] border-0 bg-zinc-800 text-base text-violet-300 hover:text-violet-400 focus:ring-violet-500">
                         <SelectValue placeholder="+ Add genre" />
                       </SelectTrigger>
                       <SelectContent className="border-0 bg-zinc-800 text-white p-0">
@@ -131,7 +130,7 @@ export default function PlaylistGenerator() {
                         <button
                           key={mins}
                           onClick={() => setDuration(mins)}
-                          className={`h-14 rounded-lg text-base font-medium transition-all ${duration === mins
+                          className={`sm:h-14 h-10 rounded-lg text-base font-medium transition-all ${duration === mins
                               ? 'bg-gradient-to-r from-violet-600 to-cyan-500 text-white'
                               : 'bg-zinc-800 text-violet-300 hover:bg-zinc-700'
                             }`}
