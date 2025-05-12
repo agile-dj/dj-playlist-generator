@@ -7,6 +7,7 @@ import { ArrowLeft } from "lucide-react"
 import SongList from "@/components/song-list"
 import ClipLoader from "@/components/clip-loader"
 
+
 const eventTypes = [
   { value: "wedding", label: "Wedding" },
   { value: "bar-mitzvah", label: "Bar Mitzvah" },
@@ -15,7 +16,7 @@ const eventTypes = [
   { value: "birthday", label: "Birthday" },
 ]
 
-const genres = [
+const genresList = [
   { value: "pop", label: "Pop" },
   { value: "rock", label: "Rock" },
   { value: "hiphop", label: "Hip Hop" },
@@ -25,16 +26,12 @@ const genres = [
   { value: "rnb", label: "R&B" },
 ]
 
-const playlistLengths = [
-  { value: "10", label: "10 songs" },
-  { value: "15", label: "15 songs" },
-  { value: "20", label: "20 songs" },
-]
+
 
 export default function PlaylistGenerator() {
   const [eventType, setEventType] = useState<string>("")
-  const [genre, setGenre] = useState<string>("")
-  const [playlistLength, setPlaylistLength] = useState<string>("")
+  const [genres, setGenres] = useState<string[]>([])
+  const [duration, setDuration] = useState<number>(60)
   const [showResults, setShowResults] = useState(false)
   const [isGenerating, setIsGenerating] = useState(false)
 
@@ -57,7 +54,7 @@ export default function PlaylistGenerator() {
         {!showResults ? (
           <div className="flex flex-col items-center">
             <h1 className="mb-2 text-center text-5xl font-bold tracking-tight text-violet-400">
-              Design your perfect set
+              Design your perfect playlist🎵
             </h1>
             <p className="mb-12 text-center text-violet-400">Fine-tune your sound</p>
 
@@ -66,13 +63,13 @@ export default function PlaylistGenerator() {
                 <div className="space-y-4">
                   <label className="text-lg font-medium text-violet-300">Event Type</label>
                   <Select value={eventType} onValueChange={setEventType}>
-                    <SelectTrigger className="h-14 w-full border-violet-900 bg-zinc-800 text-base text-white hover:text-white focus:ring-violet-500">
+                    <SelectTrigger className="h-14 w-full border-0 bg-zinc-800 text-base text-white hover:text-white focus:outline-none">
                       <SelectValue placeholder="Select event type" className="text-white" />
                     </SelectTrigger>
                     <SelectContent className="border-violet-900 bg-zinc-800 text-white">
                       {eventTypes.map((type) => (
                         <SelectItem key={type.value} value={type.value} className="text-base !text-white hover:!text-white focus:bg-violet-900"
->
+                        >
                           {type.label}
                         </SelectItem>
                       ))}
@@ -81,44 +78,75 @@ export default function PlaylistGenerator() {
                 </div>
 
                 <div className="space-y-4">
-                  <label className="text-lg font-medium text-violet-300">Genre</label>
-                  <Select value={genre} onValueChange={setGenre}>
-                    <SelectTrigger className="h-14 w-full border-violet-900 bg-zinc-800 text-base text-white hover:text-white focus:ring-violet-500">
-                      <SelectValue placeholder="Select genre" className="text-white" />
-                    </SelectTrigger>
-                    <SelectContent className="border-violet-900 bg-zinc-800 text-white">
-                      {genres.map((g) => (
-                        <SelectItem key={g.value} value={g.value} className="text-base !text-white hover:!text-white focus:bg-violet-900"
->
-                          {g.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-4">
-                  <label className="text-lg font-medium text-violet-300">Set Length</label>
-                  <div className="flex flex-wrap gap-2">
-                    {playlistLengths.map((length) => (
-                      <button
-                        key={length.value}
-                        onClick={() => setPlaylistLength(length.value)}
-                        className={`h-14 rounded-full px-6 text-base font-medium transition-colors ${
-                          playlistLength === length.value
-                            ? "bg-gradient-to-r from-violet-600 to-cyan-500 text-white"
-                            : "border border-violet-800 bg-zinc-800 text-white hover:bg-violet-900"
-                        }`}
-                      >
-                        {length.label}
-                      </button>
+                  <label className="text-lg font-medium text-violet-300">Genres</label>
+                  <div className="flex flex-wrap gap-2 p-4 rounded-lg bg-zinc-800">
+                    {genres.map((genre) => (
+                      <div key={genre} className="flex items-center gap-1 px-3 py-1 rounded-full bg-violet-600 text-white">
+                        <span>{genresList.find(g => g.value === genre)?.label}</span>
+                        <button
+                          onClick={() => setGenres(genres.filter(g => g !== genre))}
+                          className="hover:text-violet-200"
+                        >
+                          ×
+                        </button>
+                      </div>
                     ))}
+                    <Select
+                      value=""
+                      onValueChange={(value) => {
+                        if (value && !genres.includes(value)) {
+                          setGenres([...genres, value])
+                        }
+                      }}
+                    >
+                      <SelectTrigger className="h-10 w-[120px] border-0 bg-zinc-800 text-base text-violet-300 hover:text-white focus:ring-violet-500">
+                        <SelectValue placeholder="+ Add genre" />
+                      </SelectTrigger>
+                      <SelectContent className="border-0 bg-zinc-800 text-white p-0">
+                        {genresList.filter(g => !genres.includes(g.value)).map((g) => (
+                          <SelectItem 
+                            key={g.value} 
+                            value={g.value}
+                            className="text-base !text-white hover:!text-white focus:bg-violet-900"
+                          >
+                            {g.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
 
+                <div className="space-y-4">
+                  <label className="text-lg font-medium text-violet-300">Playlist Length</label>
+                  <div className="grid grid-cols-6 gap-2">
+                    {[30, 60, 90, 120, 150, 180].map((mins) => {
+                      const label = mins < 60
+                        ? `${mins}m`
+                        : mins % 60 === 0
+                          ? `${mins / 60}h`
+                          : `${Math.floor(mins / 60)}.${(mins % 60) / 60 * 10}h`; // E.g., 90 -> 1.5h
+
+                      return (
+                        <button
+                          key={mins}
+                          onClick={() => setDuration(mins)}
+                          className={`h-14 rounded-lg text-base font-medium transition-all ${duration === mins
+                              ? 'bg-gradient-to-r from-violet-600 to-cyan-500 text-white'
+                              : 'bg-zinc-800 text-violet-300 hover:bg-zinc-700'
+                            }`}
+                        >
+                          {label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+
                 <Button
                   onClick={handleGenerate}
-                  disabled={!eventType || !genre || !playlistLength || isGenerating}
+                  disabled={!eventType || genres.length === 0 || !duration || isGenerating}
                   className="mt-6 h-14 w-full bg-gradient-to-r from-violet-600 to-cyan-500 text-base font-medium text-white hover:from-violet-700 hover:to-cyan-600"
                 >
                   {isGenerating ? (
@@ -144,15 +172,15 @@ export default function PlaylistGenerator() {
 
             <div className="rounded-xl bg-zinc-900 p-8 shadow-lg">
               <div className="mb-6">
-                <h2 className="text-2xl font-bold text-violet-400">Your Set</h2>
+                <h2 className="text-2xl font-bold text-violet-400">Your Playlist</h2>
                 <p className="text-violet-400">
                   {eventTypes.find((e) => e.value === eventType)?.label} •{" "}
-                  {genres.find((g) => g.value === genre)?.label} •{" "}
-                  {playlistLengths.find((l) => l.value === playlistLength)?.label}
+                  {genres.map(g => genresList.find(item => item.value === g)?.label).join(", ")} •{" "}
+                  {duration} minutes
                 </p>
               </div>
 
-              <SongList genre={genre} eventType={eventType} />
+              <SongList genres={genres} eventType={eventType} />
             </div>
           </div>
         )}

@@ -1,4 +1,8 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { useState } from "react"
+import { BarChart3, List } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import BpmChart from "./bpm-chart"
 
 interface Song {
   id: number
@@ -9,7 +13,7 @@ interface Song {
 }
 
 interface SongListProps {
-  genre: string
+  genres: string[]
   eventType: string
 }
 
@@ -115,34 +119,66 @@ const defaultSongs: Song[] = [
   { id: 10, artist: "Various Artists", title: "Song 10", bpm: 165, length: "3:55" },
 ]
 
-export default function SongList({ genre, eventType }: SongListProps) {
-  // Get songs based on genre, or use default if not found
-  const songs = songsByGenre[genre] || defaultSongs
+export default function SongList({ genres, eventType }: SongListProps) {
+  const [showChart, setShowChart] = useState(false)
+  // Get songs based on selected genres, or use default if none found
+  const songs = genres.length > 0
+    ? genres.flatMap(genre => songsByGenre[genre] || [])
+        .filter((song, index, self) => 
+          index === self.findIndex((s) => s.id === song.id && s.title === song.title)
+        )
+        .slice(0, 10)
+    : defaultSongs
 
   return (
-    <div className="rounded-md border border-violet-900">
-      <Table>
-        <TableHeader>
-          <TableRow className="bg-gradient-to-r from-violet-900 to-violet-800 hover:from-violet-900 hover:to-violet-800">
-            <TableHead className="w-[50px] text-white">#</TableHead>
-            <TableHead className="text-white">Artist</TableHead>
-            <TableHead className="text-white">Song</TableHead>
-            <TableHead className="text-white text-right">BPM</TableHead>
-            <TableHead className="text-white text-right">Length</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {songs.map((song) => (
-            <TableRow key={song.id} className="border-violet-900/30 hover:bg-violet-900/10">
-              <TableCell className="font-medium text-violet-400">{song.id}</TableCell>
-              <TableCell>{song.artist}</TableCell>
-              <TableCell>{song.title}</TableCell>
-              <TableCell className="text-right">{song.bpm}</TableCell>
-              <TableCell className="text-right">{song.length}</TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+    <div>
+      <div className="mb-6 flex justify-end">
+        <Button
+          onClick={() => setShowChart(!showChart)}
+          className="h-12 px-4 bg-gradient-to-r from-violet-600 to-cyan-500 text-base font-medium text-white hover:from-violet-700 hover:to-cyan-600"
+        >
+          {showChart ? (
+            <>
+              <List className="mr-2 h-4 w-4" />
+              View List
+            </>
+          ) : (
+            <>
+              <BarChart3 className="mr-2 h-4 w-4" />
+              View Data
+            </>
+          )}
+        </Button>
+      </div>
+
+      {showChart ? (
+        <BpmChart songs={songs} />
+      ) : (
+        <div className="rounded-md border border-violet-900">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-gradient-to-r from-violet-900 to-violet-800 hover:from-violet-900 hover:to-violet-800">
+                <TableHead className="w-[50px] text-white">#</TableHead>
+                <TableHead className="text-white">Artist</TableHead>
+                <TableHead className="text-white">Song</TableHead>
+                <TableHead className="text-white text-right">BPM</TableHead>
+                <TableHead className="text-white text-right">Length</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {songs.map((song) => (
+                <TableRow key={song.id} className="border-violet-900/30 hover:bg-violet-900/10">
+                  <TableCell className="font-medium text-violet-400">{song.id}</TableCell>
+                  <TableCell>{song.artist}</TableCell>
+                  <TableCell>{song.title}</TableCell>
+                  <TableCell className="text-right">{song.bpm}</TableCell>
+                  <TableCell className="text-right">{song.length}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
     </div>
   )
 }
