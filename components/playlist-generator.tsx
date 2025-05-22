@@ -1,10 +1,12 @@
 "use client"
 
 import { useState } from "react"
+import Image from "next/image"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft } from "lucide-react"
 import SongList from "@/components/song-list"
+import SpotifyIcon from "../Spotify_icon.svg"
 import ClipLoader from "@/components/clip-loader"
 
 
@@ -162,12 +164,20 @@ export default function PlaylistGenerator() {
           </div>
         ) : (
           <div className="flex flex-col">
+            <div className="flex gap-4 mb-6">
             <Button
               onClick={handleBack}
-              className="mb-6 self-start h-12 px-4 bg-gradient-to-r from-violet-600 to-cyan-500 text-base font-medium text-white hover:from-violet-700 hover:to-cyan-600"
+              className="h-12 px-4 bg-gradient-to-r from-violet-600 to-cyan-500 text-base font-medium text-white hover:from-violet-700 hover:to-cyan-600"
             >
               <ArrowLeft className="mr-2 h-4 w-4" /> Back to Generator
             </Button>
+            <Button
+              onClick={() => console.log('Export to Spotify')}
+              className="h-12 px-4 hover:bg-[#1ed760] ml-auto"
+            >
+              <Image src={SpotifyIcon} alt="Spotify" className="h-10 w-10 " />
+            </Button>
+            </div>
 
             <div className="rounded-xl bg-zinc-900 p-8 shadow-lg">
               <div className="mb-6">
