@@ -1,25 +1,22 @@
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 
-interface Song {
-  id: number
-  artist: string
-  title: string
-  bpm: number
-  length: string
-}
+import { SpotifySong, convertToChartSong } from "@/types/song"
 
 interface BpmChartProps {
-  songs: Song[]
+  songs: SpotifySong[]
 }
 
 export default function BpmChart({ songs }: BpmChartProps) {
-  // Prepare data for Recharts
-  const chartData = songs.map((song, index) => ({
-    name: song.title,
-    bpm: song.bpm,
-    artist: song.artist,
+  // Convert songs to chart format and prepare data for Recharts
+  const chartData = songs.map((song, index) => {
+    const chartSong = convertToChartSong(song)
+    return ({
+    name: chartSong.title,
+    bpm: chartSong.bpm,
+    artist: chartSong.artist,
     index: index + 1
-  }))
+  })
+  })
 
   return (
     <div className="rounded-md border border-violet-900 bg-zinc-900 p-4">
