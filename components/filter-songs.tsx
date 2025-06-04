@@ -1,11 +1,14 @@
 import { SpotifySong } from '@/types/song'
 
 interface FilterParams {
-  eventType: string
-  genres: string[]
-  popularity: number
-  danceability: number
-  duration: number
+  eventType: string;
+  genres: string[];
+  popularity: number;
+  danceability: number;
+  segment?: string;
+  tempo?: number;
+  tempoRange?: [number, number];
+  duration: number;
 }
 
 export async function filterSongs(params: FilterParams): Promise<SpotifySong[]> {
@@ -22,5 +25,11 @@ export async function filterSongs(params: FilterParams): Promise<SpotifySong[]> 
     throw new Error('Failed to fetch songs')
   }
 
-  return response.json()
+  const songs: SpotifySong[] = await response.json()
+
+  const filtered = params.tempoRange
+    ? songs.filter(song => song.tempo >= params.tempoRange![0] && song.tempo <= params.tempoRange![1])
+    : songs;
+
+  return filtered
 }

@@ -19,11 +19,25 @@ export default function SongList({ songs }: SongListProps) {
     setSongList(songs)
   }, [songs])
 
+  const totalDurationMinutes = Number(
+    (songList.reduce((acc, song) => acc + song.duration_ms, 0) / 1000 / 60).toFixed(1)
+  )
+
+  const genres = Array.from(new Set(songList.map((s) => s.track_genre)))
+
   const onDragEnd = (result: DropResult) => {
     if (!result.destination) return
+
     const items = Array.from(songList)
-    const [reorderedItem] = items.splice(result.source.index, 1)
-    items.splice(result.destination.index, 0, reorderedItem)
+    const [moved] = items.splice(result.source.index, 1)
+
+    const prevSong = items[result.destination.index - 1]
+    const nextSong = items[result.destination.index]
+    const destinationSegment = prevSong?.segment || nextSong?.segment || moved.segment
+
+    moved.segment = destinationSegment
+
+    items.splice(result.destination.index, 0, moved)
     setSongList(items)
   }
 
@@ -49,7 +63,7 @@ export default function SongList({ songs }: SongListProps) {
       </div>
 
       {showChart ? (
-        <BpmChart songs={songList} />
+        <BpmChart songs={songList} totalDurationMinutes={totalDurationMinutes} genres={genres} />
       ) : (
         <div className="rounded-md border border-violet-900">
           <div className="bg-gradient-to-r from-violet-900 to-violet-800 p-4">
@@ -71,34 +85,42 @@ export default function SongList({ songs }: SongListProps) {
                   ref={provided.innerRef}
                   className="divide-y divide-violet-900/30"
                 >
-                  {songList.map((song, index) => (
-                    <Draggable
-                      key={song.track_id}
-                      draggableId={song.track_id}
-                      index={index}
-                    >
-                      {(provided: DraggableProvided, snapshot: DraggableStateSnapshot) => (
-                        <div
-                          ref={provided.innerRef}
-                          {...provided.draggableProps}
-                          className={`flex items-center p-4 bg-transparent ${snapshot.isDragging ? 'bg-violet-900/20' : 'hover:bg-violet-900/10'}`}
-                        >
-                          <div
-                            {...provided.dragHandleProps}
-                            className="text-violet-400 mr-4"
-                          >
-                            <GripVertical />
+                  {songList.map((song, index) => {
+                    const isNewSegment =
+                      index === 0 || song.segment !== songList[index - 1].segment
+
+                    return (
+                      <div key={`${song.track_id}-${index}`}>
+                        {isNewSegment && (
+                          <div className="bg-violet-950 px-4 py-2 text-white font-semibold border-t border-violet-800">
+                            {song.segment}
                           </div>
-                          <div className="flex-1 grid grid-cols-4">
-                            <div>{song.artists}</div>
-                            <div>{song.track_name}</div>
-                            <div className="text-right">{Math.round(song.tempo)}</div>
-                            <div className="text-right">{Math.round(song.duration_ms / 1000 / 60)}m</div>
-                          </div>
-                        </div>
-                      )}
-                    </Draggable>
-                  ))}
+                        )}
+                        <Draggable draggableId={song.track_id} index={index}>
+                          {(provided: DraggableProvided, snapshot: DraggableStateSnapshot) => (
+                            <div
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              className={`flex items-center p-4 bg-transparent ${snapshot.isDragging ? 'bg-violet-900/20' : 'hover:bg-violet-900/10'}`}
+                            >
+                              <div
+                                {...provided.dragHandleProps}
+                                className="text-violet-400 mr-4"
+                              >
+                                <GripVertical />
+                              </div>
+                              <div className="flex-1 grid grid-cols-4">
+                                <div>{song.artists}</div>
+                                <div>{song.track_name}</div>
+                                <div className="text-right">{Math.round(song.tempo)}</div>
+                                <div className="text-right">{Math.round(song.duration_ms / 1000 / 60)}m</div>
+                              </div>
+                            </div>
+                          )}
+                        </Draggable>
+                      </div>
+                    )
+                  })}
                   {provided.placeholder}
                 </div>
               )}

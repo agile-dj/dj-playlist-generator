@@ -8,6 +8,7 @@ export interface SpotifySong {
   danceability: number
   track_genre: string
   tempo: number
+  segment: string
 }
 
 export interface ChartSong {
@@ -16,6 +17,7 @@ export interface ChartSong {
   title: string
   bpm: number
   length: string
+  segment: string
 }
 
 export function convertToChartSong(song: SpotifySong): ChartSong {
@@ -24,6 +26,7 @@ export function convertToChartSong(song: SpotifySong): ChartSong {
     artist: song.artists,
     title: song.track_name,
     bpm: song.tempo,
-    length: `${Math.round(song.duration_ms / 1000 / 60)}m`
+    length: `${Math.round(song.duration_ms / 1000 / 60)}m`,
+    segment: song.segment ?? "General"
   }
 }

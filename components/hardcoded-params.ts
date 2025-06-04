@@ -1,3 +1,4 @@
+import { SpotifySong } from "@/types/song";
 const eventTypes = [
   { value: "wedding", label: "Wedding" },
   { value: "bar-mitzvah", label: "Bar Mitzvah" },
@@ -6,13 +7,12 @@ const eventTypes = [
   { value: "birthday", label: "Birthday" },
 ]
 
-const genresList = [
-  { value: "pop", label: "Pop" },
-  { value: "rock", label: "Rock" },
-  { value: "party", label: "Party" },
-  { value: "progressive-house", label: "Progressive House" },
-  { value: "opera", label: "Opera" },
-  { value: "acoustic", label: "Acoustic" },
-]
+async function getDynamicGenres(): Promise<{ value: string; label: string }[]> {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || ""}/api/genres`);
+  if (!res.ok) {
+    throw new Error("Failed to fetch genres");
+  }
+  return await res.json();
+}
 
-export { eventTypes, genresList }
+export { eventTypes, getDynamicGenres };

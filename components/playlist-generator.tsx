@@ -1,16 +1,16 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Image from "next/image"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft } from "lucide-react"
 import SongList from "@/components/song-list"
-import SpotifyIcon from "../Spotify_icon.svg"
+//import SpotifyIcon from "../Spotify_icon.svg"
 import ClipLoader from "@/components/ui/clip-loader"
 import { Slider } from "@/components/ui/slider"
 import { filterSongs } from "./filter-songs"
-import { eventTypes, genresList } from "./hardcoded-params"
+import { eventTypes } from "./hardcoded-params"
 
 
 export default function PlaylistGenerator() {
@@ -22,18 +22,88 @@ export default function PlaylistGenerator() {
   const [showResults, setShowResults] = useState(false)
   const [isGenerating, setIsGenerating] = useState(false)
   const [filteredSongs, setFilteredSongs] = useState<any[]>([])
+  // Wedding segment tempos
+  const [receptionTempo, setReceptionTempo] = useState<string>("")
+  const [ceremonyTempo, setceremonyTempo] = useState<string>("")
+  const [dancingTempo, setDancingTempo] = useState<string>("")
+  const [receptionDuration, setReceptionDuration] = useState<number>(30)
+  const [ceremonyDuration, setceremonyDuration] = useState<number>(15)
+  const [dancingDuration, setDancingDuration] = useState<number>(60)
+  const [genresList, setGenresList] = useState<{ value: string; label: string }[]>([])
+
+  useEffect(() => {
+    fetch("/api/genres")
+      .then((res) => res.json())
+      .then((data) => setGenresList(data))
+      .catch((err) => console.error("Failed to fetch genres:", err))
+  }, [])
 
   const handleGenerate = () => {
     setIsGenerating(true)
-    filterSongs({
+
+    // Helper to convert tempo label to numeric range
+    const convertTempoToRange = (tempo: string): [number, number] => {
+      switch (tempo) {
+        case "slow":
+          return [50, 75];
+        case "medium":
+          return [90, 115];
+        case "fast":
+          return [120, 150];
+        default:
+          return [90, 115];
+      }
+    }
+
+    const weddingSegments = [
+      {
+        label: "Reception",
+        tempoRange: convertTempoToRange(receptionTempo),
+        duration: receptionDuration
+      },
+      {
+        label: "ceremony",
+        tempoRange: convertTempoToRange(ceremonyTempo),
+        duration: ceremonyDuration
+      },
+      {
+        label: "Dancing",
+        tempoRange: convertTempoToRange(dancingTempo),
+        duration: dancingDuration
+      }
+    ]
+
+    const baseParams = {
       eventType,
       genres,
       popularity,
-      danceability,
-      duration
-    })
-      .then(songs => {
-        setFilteredSongs(songs)
+      danceability
+    }
+
+    const promises = eventType === "wedding"
+      ? weddingSegments.map(segment =>
+          filterSongs({
+            ...baseParams,
+            duration: segment.duration,
+            tempoRange: segment.tempoRange,
+            segment: segment.label
+          }).then(songs => ({ label: segment.label, songs }))
+        )
+      : [filterSongs({ ...baseParams, duration }).then(songs => ({ label: "Full", songs }))]
+
+    Promise.all(promises)
+      .then(results => {
+        const segmentOrder = ["Reception", "ceremony", "Dancing"];
+        const combinedSongs = eventType === "wedding"
+          ? segmentOrder.flatMap(segment =>
+              results
+                .filter(result => result.label === segment)
+                .flatMap(result =>
+                  result.songs.map(song => ({ ...song, segment }))
+                )
+            )
+          : results[0].songs.map(song => ({ ...song, segment: "Full" }));
+        setFilteredSongs(combinedSongs)
         setIsGenerating(false)
         setShowResults(true)
       })
@@ -75,13 +145,96 @@ export default function PlaylistGenerator() {
                     </SelectContent>
                   </Select>
                 </div>
+                {eventType === "wedding" && (
+                  <div className="space-y-6 rounded-lg border border-violet-900 p-4 mt-4 bg-zinc-800">
+                    <h2 className="text-xl font-semibold text-violet-300">Wedding Segments</h2>
+
+                    <div className="space-y-2">
+                      <label className="text-violet-200">Reception</label>
+                      <Select value={receptionTempo} onValueChange={setReceptionTempo}>
+                        <SelectTrigger className="h-12 w-full bg-zinc-700 border-0 text-violet-200">
+                          <SelectValue placeholder="Select tempo for reception" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-zinc-800 text-white">
+                          <SelectItem value="slow">Slow</SelectItem>
+                          <SelectItem value="medium">Medium</SelectItem>
+                          <SelectItem value="fast">Fast</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-violet-200">Reception Duration (minutes)</label>
+                      <Slider
+                        value={[receptionDuration]}
+                        onValueChange={([value]) => setReceptionDuration(value)}
+                        min={10}
+                        max={120}
+                        step={5}
+                        className="w-full"
+                      />
+                      <span className="text-sm text-violet-300">{receptionDuration} minutes</span>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-violet-200">ceremony</label>
+                      <Select value={ceremonyTempo} onValueChange={setceremonyTempo}>
+                        <SelectTrigger className="h-12 w-full bg-zinc-700 border-0 text-violet-200">
+                          <SelectValue placeholder="Select tempo for ceremony" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-zinc-800 text-white">
+                          <SelectItem value="slow">Slow</SelectItem>
+                          <SelectItem value="medium">Medium</SelectItem>
+                          <SelectItem value="fast">Fast</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-violet-200">ceremony Duration (minutes)</label>
+                      <Slider
+                        value={[ceremonyDuration]}
+                        onValueChange={([value]) => setceremonyDuration(value)}
+                        min={10}
+                        max={120}
+                        step={5}
+                        className="w-full"
+                      />
+                      <span className="text-sm text-violet-300">{ceremonyDuration} minutes</span>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-violet-200">Dancing</label>
+                      <Select value={dancingTempo} onValueChange={setDancingTempo}>
+                        <SelectTrigger className="h-12 w-full bg-zinc-700 border-0 text-violet-200">
+                          <SelectValue placeholder="Select tempo for dancing" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-zinc-800 text-white">
+                          <SelectItem value="slow">Slow</SelectItem>
+                          <SelectItem value="medium">Medium</SelectItem>
+                          <SelectItem value="fast">Fast</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-violet-200">Dancing Duration (minutes)</label>
+                      <Slider
+                        value={[dancingDuration]}
+                        onValueChange={([value]) => setDancingDuration(value)}
+                        min={10}
+                        max={120}
+                        step={5}
+                        className="w-full"
+                      />
+                      <span className="text-sm text-violet-300">{dancingDuration} minutes</span>
+                    </div>
+                  </div>
+                )}
 
                 <div className="space-y-4">
                   <label className="text-lg font-medium text-violet-300">Genres</label>
                   <div className="flex flex-wrap gap-2 p-4 rounded-lg bg-zinc-800">
                     {genres.map((genre) => (
                       <div key={genre} className="flex items-center gap-1 px-3 py-1 rounded-full bg-violet-600 text-white">
-                        <span>{genresList.find(g => g.value === genre)?.label}</span>
+                        <span>{genresList.find(g => g.value === genre)?.label || genre}</span>
                         <button
                           onClick={() => setGenres(genres.filter(g => g !== genre))}
                           className="hover:text-violet-200"
@@ -102,7 +255,7 @@ export default function PlaylistGenerator() {
                         <SelectValue placeholder="+ Add genre" />
                       </SelectTrigger>
                       <SelectContent className="border-0 bg-zinc-800 text-white p-0">
-                        {genresList.filter(g => !genres.includes(g.value)).map((g) => (
+                        {(genresList || []).filter(g => !genres.includes(g.value)).map((g) => (
                           <SelectItem
                             key={g.value}
                             value={g.value}
@@ -146,28 +299,44 @@ export default function PlaylistGenerator() {
 
                 <div className="space-y-4">
                   <label className="text-lg font-medium text-violet-300">Playlist Length</label>
-                  <div className="grid grid-cols-6 gap-2">
-                    {[30, 60, 90, 120, 150, 180].map((mins) => {
-                      const label = mins < 60
-                        ? `${mins}m`
-                        : mins % 60 === 0
-                          ? `${mins / 60}h`
-                          : `${Math.floor(mins / 60)}.${(mins % 60) / 60 * 10}h`; // E.g., 90 -> 1.5h
+                  {eventType !== "wedding" ? (
+                    <div className="grid grid-cols-6 gap-2">
+                      {[30, 60, 90, 120, 150, 180].map((mins) => {
+                        const label = mins < 60
+                          ? `${mins}m`
+                          : mins % 60 === 0
+                            ? `${mins / 60}h`
+                            : `${Math.floor(mins / 60)}.${(mins % 60) / 60 * 10}h`
 
-                      return (
-                        <button
-                          key={mins}
-                          onClick={() => setDuration(mins)}
-                          className={`sm:h-14 h-10 rounded-lg text-base font-medium transition-all ${duration === mins
-                            ? 'bg-gradient-to-r from-violet-600 to-cyan-500 text-white'
-                            : 'bg-zinc-800 text-violet-300 hover:bg-zinc-700'
-                            }`}
-                        >
-                          {label}
-                        </button>
-                      );
-                    })}
-                  </div>
+                        return (
+                          <button
+                            key={mins}
+                            onClick={() => setDuration(mins)}
+                            className={`sm:h-14 h-10 rounded-lg text-base font-medium transition-all ${duration === mins
+                              ? 'bg-gradient-to-r from-violet-600 to-cyan-500 text-white'
+                              : 'bg-zinc-800 text-violet-300 hover:bg-zinc-700'
+                              }`}
+                          >
+                            {label}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  ) : (
+                    <div className="pt-2">
+                      <Slider
+                        value={[receptionDuration + ceremonyDuration + dancingDuration]}
+                        disabled
+                        min={10}
+                        max={300}
+                        step={5}
+                        className="w-full opacity-70"
+                      />
+                      <span className="text-sm text-violet-400">
+                        Total Duration: {receptionDuration + ceremonyDuration + dancingDuration} minutes
+                      </span>
+                    </div>
+                  )}
                 </div>
                 <Button
                   onClick={handleGenerate}
@@ -195,13 +364,6 @@ export default function PlaylistGenerator() {
               >
                 <ArrowLeft className="mr-2 h-4 w-4" /> Back to Generator
               </Button>
-              <Button
-                onClick={() => console.log('Export to Spotify')}
-                className="h-12 px-4 hover:bg-[#1ed760] ml-auto"
-              >
-                <Image src={SpotifyIcon} alt="Spotify" className="h-10 w-10 " />
-                Export Playlist
-              </Button>
             </div>
 
             <div className="rounded-xl bg-zinc-900 p-8 shadow-lg">
@@ -209,8 +371,8 @@ export default function PlaylistGenerator() {
                 <h2 className="text-2xl font-bold text-violet-400">Your Playlist</h2>
                 <p className="text-violet-400">
                   {eventTypes.find((e) => e.value === eventType)?.label} •{" "}
-                  {genres.map(g => genresList.find(item => item.value === g)?.label).join(", ")} •{" "}
-                  {duration} minutes
+                  {genres.map(g => genresList.find(item => item.value === g)?.label || g).join(", ")} •{" "}
+                  {Math.round(filteredSongs.reduce((acc, s) => acc + s.duration_ms, 0) / 1000 / 60)} minutes
                 </p>
               </div>
               {showResults && (

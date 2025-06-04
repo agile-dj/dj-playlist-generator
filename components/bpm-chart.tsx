@@ -1,27 +1,66 @@
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts'
 
 import { SpotifySong, convertToChartSong } from "@/types/song"
 
 interface BpmChartProps {
   songs: SpotifySong[]
+  totalDurationMinutes: number
+  genres: string[]
 }
 
-export default function BpmChart({ songs }: BpmChartProps) {
+export default function BpmChart({ songs, totalDurationMinutes, genres }: BpmChartProps) {
   // Convert songs to chart format and prepare data for Recharts
   const chartData = songs.map((song, index) => {
     const chartSong = convertToChartSong(song)
     return ({
-    name: chartSong.title,
-    bpm: chartSong.bpm,
-    artist: chartSong.artist,
-    index: index + 1
+      name: chartSong.title,
+      bpm: chartSong.bpm,
+      artist: chartSong.artist,
+      index: index + 1,
+      segment: chartSong.segment // Optional field for segment info
+    })
   })
-  })
+
+  // Calculate exact segment alignment with playlist segments
+  const segments: { name: string; startIndex: number; endIndex: number }[] = [];
+  let lastSegment: string | null = null;
+  let startIndex = 0;
+
+  chartData.forEach((item, idx) => {
+    if (item.segment !== lastSegment) {
+      if (lastSegment !== null) {
+        segments.push({ name: lastSegment, startIndex, endIndex: idx - 1 });
+      }
+      lastSegment = item.segment;
+      startIndex = idx;
+    }
+    if (idx === chartData.length - 1) {
+      segments.push({ name: lastSegment, startIndex, endIndex: idx });
+    }
+  });
+
+  // Ensure first segment always starts at track 1
+  if (segments.length > 0 && segments[0].startIndex !== 0) {
+    segments[0].startIndex = 0;
+  }
 
   return (
     <div className="rounded-md border border-violet-900 bg-zinc-900 p-4">
       <h3 className="mb-4 text-lg font-medium text-violet-300">BPM Flow</h3>
       <div className="h-[300px] w-full">
+        <div className="flex w-full text-xs text-white justify-between mb-1 px-1">
+          {segments.map((seg, i) => (
+            <div
+              key={`label-${i}`}
+              style={{
+                flex: `${seg.endIndex - seg.startIndex + 1} 0 auto`,
+                textAlign: "center"
+              }}
+            >
+              {seg.name}
+            </div>
+          ))}
+        </div>
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={chartData} margin={{ top: 20, right: 20, left: 20, bottom: 20 }}>
             <defs>
@@ -53,6 +92,14 @@ export default function BpmChart({ songs }: BpmChartProps) {
               formatter={(value: number, name: string) => [`${value} BPM`, 'BPM']}
               labelFormatter={(value) => `Track ${value}`}
             />
+            {segments.slice(0, -1).map((seg, i) => (
+              <ReferenceLine
+                key={`segment-end-${i}`}
+                x={segments[i].endIndex + 1}
+                stroke="#8b5cf6"
+                strokeDasharray="4 4"
+              />
+            ))}
             <Line
               type="monotone"
               dataKey="bpm"
