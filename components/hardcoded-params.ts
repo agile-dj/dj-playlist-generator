@@ -1,4 +1,3 @@
-import { SpotifySong } from "@/types/song";
 const eventTypes = [
   { value: "wedding", label: "Wedding" },
   { value: "bar-mitzvah", label: "Bar Mitzvah" },

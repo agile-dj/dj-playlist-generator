@@ -1,12 +1,10 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import Image from "next/image"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft } from "lucide-react"
 import SongList from "@/components/song-list"
-//import SpotifyIcon from "../Spotify_icon.svg"
 import ClipLoader from "@/components/ui/clip-loader"
 import { Slider } from "@/components/ui/slider"
 import { filterSongs } from "./filter-songs"

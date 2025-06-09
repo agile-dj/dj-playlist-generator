@@ -23,7 +23,7 @@ export default async function handler(
   }
 
   const params = req.body as FilterParams
-  const datasetPath = path.join(process.cwd(), 'spotify_dataset', 'dataset.csv')
+  const datasetPath = path.join(process.cwd(), 'spotify_dataset', 'songs_data.csv')
   const fileContent = await fs.readFile(datasetPath, 'utf-8')
   
   const songs: SpotifySong[] = await new Promise((resolve, reject) => {

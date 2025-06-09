@@ -5,7 +5,7 @@ import { parse } from 'csv-parse'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    const datasetPath = path.join(process.cwd(), 'spotify_dataset', 'dataset.csv')
+    const datasetPath = path.join(process.cwd(), 'spotify_dataset', 'songs_data.csv')
     const fileContent = await fs.readFile(datasetPath, 'utf-8')
 
     const genres = await new Promise<string[]>((resolve, reject) => {

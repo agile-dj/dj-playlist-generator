@@ -72,8 +72,8 @@ export default function SongList({ songs }: SongListProps) {
               <div className="flex-1 grid grid-cols-4 text-white font-medium">
                 <div>Artist</div>
                 <div>Song name</div>
-                <div className="text-right">BPM</div>
                 <div className="text-right">Length</div>
+                <div className="text-right">Play</div>
               </div>
             </div>
           </div>
@@ -112,8 +112,8 @@ export default function SongList({ songs }: SongListProps) {
                               <div className="flex-1 grid grid-cols-4">
                                 <div>{song.artists}</div>
                                 <div>{song.track_name}</div>
-                                <div className="text-right">{Math.round(song.tempo)}</div>
                                 <div className="text-right">{Math.round(song.duration_ms / 1000 / 60)}m</div>
+                                <div className="text-right"></div>
                               </div>
                             </div>
                           )}
