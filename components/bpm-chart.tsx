@@ -5,10 +5,9 @@ import { SpotifySong, convertToChartSong } from "@/types/song"
 interface BpmChartProps {
   songs: SpotifySong[]
   totalDurationMinutes: number
-  genres: string[]
 }
 
-export default function BpmChart({ songs, totalDurationMinutes, genres }: BpmChartProps) {
+export default function BpmChart({ songs }: BpmChartProps) {
   // Convert songs to chart format and prepare data for Recharts
   const chartData = songs.map((song, index) => {
     const chartSong = convertToChartSong(song)
@@ -89,8 +88,8 @@ export default function BpmChart({ songs, totalDurationMinutes, genres }: BpmCha
                 color: '#8b5cf6'
               }}
               labelStyle={{ color: '#8b5cf6' }}
-              formatter={(value: number, name: string) => [`${value} BPM`, 'BPM']}
-              labelFormatter={(value) => `Track ${value}`}
+              formatter={(value: number) => [`${value} BPM`]}
+              labelFormatter={(value) => songs[value - 1]?.track_name || `Track ${value}`}
             />
             {segments.slice(0, -1).map((seg, i) => (
               <ReferenceLine
