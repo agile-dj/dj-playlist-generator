@@ -2,21 +2,49 @@ import { useState, useEffect } from "react"
 import { BarChart3, List, GripVertical } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import BpmChart from "./bpm-chart"
+import { getYoutubeLink } from "../src/utils/youtube"
 
-import { DragDropContext, Droppable, Draggable, DropResult, DroppableProvided, DraggableProvided, DraggableStateSnapshot } from "@hello-pangea/dnd"
-
+import {
+  DragDropContext,
+  Droppable,
+  Draggable,
+  DropResult,
+  DroppableProvided,
+  DraggableProvided,
+  DraggableStateSnapshot,
+} from "@hello-pangea/dnd"
 import { SpotifySong } from "@/types/song"
 
 interface SongListProps {
   songs: SpotifySong[]
 }
 
+type SongWithYoutube = SpotifySong & {
+  youtube_url?: string | null
+  youtube_thumbnail?: string | null
+}
+
 export default function SongList({ songs }: SongListProps) {
   const [showChart, setShowChart] = useState(false)
-  const [songList, setSongList] = useState<SpotifySong[]>(songs)
+
+  const [songList, setSongList] = useState<SongWithYoutube[]>([])
 
   useEffect(() => {
-    setSongList(songs)
+    async function enrichSongs() {
+     const enriched = await Promise.all(
+        songs.map(async (song) => {
+          const { url, thumbnail } = await getYoutubeLink(song.track_name, song.artists)
+          return {
+            ...song,
+            youtube_url: url,
+            youtube_thumbnail: thumbnail
+          } as SongWithYoutube
+        })
+      )
+      setSongList(enriched)
+    }
+
+    enrichSongs()
   }, [songs])
 
   const totalDurationMinutes = Number(
@@ -86,6 +114,7 @@ export default function SongList({ songs }: SongListProps) {
                   className="divide-y divide-violet-900/30"
                 >
                   {songList.map((song, index) => {
+                    console.log("▶️ song.youtube_url:", song.youtube_url)
                     const isNewSegment =
                       index === 0 || song.segment !== songList[index - 1].segment
 
@@ -101,7 +130,9 @@ export default function SongList({ songs }: SongListProps) {
                             <div
                               ref={provided.innerRef}
                               {...provided.draggableProps}
-                              className={`flex items-center p-4 bg-transparent ${snapshot.isDragging ? 'bg-violet-900/20' : 'hover:bg-violet-900/10'}`}
+                              className={`flex items-center p-4 bg-transparent ${
+                                snapshot.isDragging ? "bg-violet-900/20" : "hover:bg-violet-900/10"
+                              }`}
                             >
                               <div
                                 {...provided.dragHandleProps}
@@ -109,11 +140,30 @@ export default function SongList({ songs }: SongListProps) {
                               >
                                 <GripVertical />
                               </div>
-                              <div className="flex-1 grid grid-cols-4">
+                              <div className="flex-1 grid grid-cols-4 items-center">
                                 <div>{song.artists}</div>
                                 <div>{song.track_name}</div>
-                                <div className="text-right">{Math.round(song.duration_ms / 1000 / 60)}m</div>
-                                <div className="text-right"></div>
+                                <div className="text-right">
+                                  {Math.round(song.duration_ms / 1000 / 60)}m
+                                </div>
+                               <div className="flex justify-center">
+                                {song.youtube_thumbnail ? (
+                                  <a
+                                    href={song.youtube_url || `https://www.youtube.com/results?search_query=${encodeURIComponent(`${song.track_name} ${song.artists}`)}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                  >
+                                    <img
+                                      src={song.youtube_thumbnail}
+                                      alt={`Thumbnail for ${song.track_name}`}
+                                      className="w-14 h-14 rounded-md border border-purple-400 shadow-md hover:scale-105 transition-transform"
+                                    />
+                                  </a>
+                                ) : (
+                                  <span className="text-cyan-300 text-sm">No preview</span>
+                                )}
+                              </div>
+
                               </div>
                             </div>
                           )}
