@@ -9,6 +9,7 @@ export interface SpotifySong {
   track_genre: string
   tempo: number
   segment: string
+  youtube_url?: string
 }
 
 export interface ChartSong {
