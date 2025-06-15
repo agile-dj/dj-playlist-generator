@@ -65,7 +65,7 @@ export default function SongList({ songs }: SongListProps) {
       {showChart ? (
         <BpmChart songs={songList} totalDurationMinutes={totalDurationMinutes}/>
       ) : (
-        <div className="rounded-md border border-violet-900">
+        <div className="rounded-md border border-violet-900" data-cy="song-list">
           <div className="bg-gradient-to-r from-violet-900 to-violet-800 p-4">
             <div className="flex items-center">
               <div className="w-10" />
@@ -108,9 +108,9 @@ export default function SongList({ songs }: SongListProps) {
                               >
                                 <GripVertical />
                               </div>
-                              <div className="flex-1 grid grid-cols-[2fr_3fr_80px] gap-4">
-                                <div className="break-words">{song.artists}</div>
-                                <div className="break-words">{song.track_name}</div>
+                              <div className="flex-1 grid grid-cols-4 items-center" data-cy="song-item" data-danceability={song.danceability} data-popularity={song.popularity} data-tempo={song.tempo} data-segment={song.segment}>
+                                <div>{song.artists}</div>
+                                <div>{song.track_name}</div>
                                 <div className="text-right">{Math.round(song.duration_ms / 1000 / 60)}m</div>
                               </div>
                             </div>
