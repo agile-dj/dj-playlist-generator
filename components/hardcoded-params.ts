@@ -1,6 +1,6 @@
 const eventTypes = [
   { value: "wedding", label: "Wedding" },
-  { value: "bar-mitzvah", label: "Bar Mitzvah" },
+  { value: "bar mitzvah", label: "Bar Mitzvah" },
   { value: "party", label: "Party" },
   { value: "corporate", label: "Corporate Event" },
   { value: "birthday", label: "Birthday" },

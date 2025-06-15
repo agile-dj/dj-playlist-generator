@@ -129,13 +129,17 @@ export default function PlaylistGenerator() {
               <div className="space-y-8">
                 <div className="space-y-4">
                   <label className="text-lg font-medium text-violet-300">Event Type</label>
-                  <Select value={eventType} onValueChange={setEventType}>
-                    <SelectTrigger className="h-14 w-full border-0 bg-zinc-800 text-base text-violet-300 focus:outline-none">
+                  <Select value={eventType} onValueChange={setEventType} data-cy="event-type-select">
+                    <SelectTrigger className="h-14 w-full border-0 bg-zinc-800 text-base text-violet-300 focus:outline-none" data-cy="event-type-trigger">
                       <SelectValue placeholder="Select event type" className="text-white" />
                     </SelectTrigger>
                     <SelectContent className="border-violet-900 bg-zinc-800 text-white">
                       {eventTypes.map((type) => (
-                        <SelectItem key={type.value} value={type.value} className="text-base !text-white hover:!text-white focus:bg-violet-900"
+                        <SelectItem
+                          key={type.value}
+                          value={type.value}
+                          data-cy={`event-type-option-${type.value.toLowerCase()}`}
+                          className="text-base !text-white hover:!text-white focus:bg-violet-900"
                         >
                           {type.label}
                         </SelectItem>
@@ -149,14 +153,14 @@ export default function PlaylistGenerator() {
 
                     <div className="space-y-2">
                       <label className="text-violet-200">Reception</label>
-                      <Select value={receptionTempo} onValueChange={setReceptionTempo}>
-                        <SelectTrigger className="h-12 w-full bg-zinc-700 border-0 text-violet-200">
+                      <Select value={receptionTempo} onValueChange={setReceptionTempo} data-cy="reception-tempo-select">
+                        <SelectTrigger className="h-12 w-full bg-zinc-700 border-0 text-violet-200" data-cy="reception-tempo-trigger">
                           <SelectValue placeholder="Select tempo for reception" />
                         </SelectTrigger>
                         <SelectContent className="bg-zinc-800 text-white">
-                          <SelectItem value="slow">Slow</SelectItem>
-                          <SelectItem value="medium">Medium</SelectItem>
-                          <SelectItem value="fast">Fast</SelectItem>
+                          <SelectItem value="slow" data-cy="tempo-option-slow">Slow</SelectItem>
+                          <SelectItem value="medium" data-cy="tempo-option-medium">Medium</SelectItem>
+                          <SelectItem value="fast" data-cy="tempo-option-fast">Fast</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -175,14 +179,14 @@ export default function PlaylistGenerator() {
 
                     <div className="space-y-2">
                       <label className="text-violet-200">ceremony</label>
-                      <Select value={ceremonyTempo} onValueChange={setceremonyTempo}>
-                        <SelectTrigger className="h-12 w-full bg-zinc-700 border-0 text-violet-200">
+                      <Select value={ceremonyTempo} onValueChange={setceremonyTempo} data-cy="ceremony-tempo-select">
+                        <SelectTrigger className="h-12 w-full bg-zinc-700 border-0 text-violet-200" data-cy="ceremony-tempo-trigger">
                           <SelectValue placeholder="Select tempo for ceremony" />
                         </SelectTrigger>
                         <SelectContent className="bg-zinc-800 text-white">
-                          <SelectItem value="slow">Slow</SelectItem>
-                          <SelectItem value="medium">Medium</SelectItem>
-                          <SelectItem value="fast">Fast</SelectItem>
+                          <SelectItem value="slow" data-cy="tempo-option-slow">Slow</SelectItem>
+                          <SelectItem value="medium" data-cy="tempo-option-medium">Medium</SelectItem>
+                          <SelectItem value="fast" data-cy="tempo-option-fast">Fast</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -201,14 +205,14 @@ export default function PlaylistGenerator() {
 
                     <div className="space-y-2">
                       <label className="text-violet-200">Dancing</label>
-                      <Select value={dancingTempo} onValueChange={setDancingTempo}>
-                        <SelectTrigger className="h-12 w-full bg-zinc-700 border-0 text-violet-200">
+                      <Select value={dancingTempo} onValueChange={setDancingTempo} data-cy="dancing-tempo-select">
+                        <SelectTrigger className="h-12 w-full bg-zinc-700 border-0 text-violet-200" data-cy="dancing-tempo-trigger">
                           <SelectValue placeholder="Select tempo for dancing" />
                         </SelectTrigger>
                         <SelectContent className="bg-zinc-800 text-white">
-                          <SelectItem value="slow">Slow</SelectItem>
-                          <SelectItem value="medium">Medium</SelectItem>
-                          <SelectItem value="fast">Fast</SelectItem>
+                          <SelectItem value="slow" data-cy="tempo-option-slow">Slow</SelectItem>
+                          <SelectItem value="medium" data-cy="tempo-option-medium">Medium</SelectItem>
+                          <SelectItem value="fast" data-cy="tempo-option-fast">Fast</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -248,8 +252,9 @@ export default function PlaylistGenerator() {
                           setGenres([...genres, value])
                         }
                       }}
+                      data-cy="genre-select"
                     >
-                      <SelectTrigger className="h-10 w-[120px] border-0 bg-zinc-800 text-base text-violet-300 hover:text-violet-400 focus:ring-violet-500">
+                      <SelectTrigger className="h-10 w-[120px] border-0 bg-zinc-800 text-base text-violet-300 hover:text-violet-400 focus:ring-violet-500" data-cy="genre-select-trigger">
                         <SelectValue placeholder="+ Add genre" />
                       </SelectTrigger>
                       <SelectContent className="border-0 bg-zinc-800 text-white p-0">
@@ -257,6 +262,7 @@ export default function PlaylistGenerator() {
                           <SelectItem
                             key={g.value}
                             value={g.value}
+                            data-cy={`genre-option-${g.value.toLowerCase().replace(' ', '-')}`}
                             className="text-base !text-white hover:!text-white focus:bg-violet-900"
                           >
                             {g.label}
@@ -272,6 +278,7 @@ export default function PlaylistGenerator() {
                         <span className="text-lg text-violet-400">{popularity}%</span>
                       </div>
                       <Slider
+                        data-cy="popularity-slider"
                         value={[popularity]}
                         onValueChange={([value]) => setPopularity(value)}
                         max={100}
@@ -285,6 +292,7 @@ export default function PlaylistGenerator() {
                         <span className="text-lg text-violet-400">{danceability}%</span>
                       </div>
                       <Slider
+                        data-cy="danceability-slider"
                         value={[danceability]}
                         onValueChange={([value]) => setDanceability(value)}
                         max={100}
@@ -337,6 +345,7 @@ export default function PlaylistGenerator() {
                   )}
                 </div>
                 <Button
+                  data-cy="generate-button"
                   onClick={handleGenerate}
                   disabled={!eventType || genres.length === 0 || !duration || isGenerating}
                   className="mt-6 h-14 w-full bg-gradient-to-r from-violet-600 to-cyan-500 text-base font-medium text-white hover:from-violet-700 hover:to-cyan-600"
