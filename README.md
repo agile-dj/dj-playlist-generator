@@ -8,6 +8,8 @@ The playlist generated based on a songs dataset from spotify we preprocessed
 
 Link: https://www.kaggle.com/code/erezlavi/dj-playlist-gen-eda/edit
 
+### In order to run cypress e2e tests:
+npx cypress opem
 
 ## 🚀 Getting Started
 
