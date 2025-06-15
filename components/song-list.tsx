@@ -69,9 +69,10 @@ export default function SongList({ songs }: SongListProps) {
           <div className="bg-gradient-to-r from-violet-900 to-violet-800 p-4">
             <div className="flex items-center">
               <div className="w-10" />
-              <div className="flex-1 grid grid-cols-[2fr_3fr_80px] gap-4 text-white font-medium">
+              <div className="flex-1 grid grid-cols-[2fr_3fr_1fr_80px] gap-4 text-white font-medium">
                 <div>Artist</div>
                 <div>Song name</div>
+                <div>Genre</div>
                 <div className="text-right">Length</div>
               </div>
             </div>
@@ -108,9 +109,10 @@ export default function SongList({ songs }: SongListProps) {
                               >
                                 <GripVertical />
                               </div>
-                              <div className="flex-1 grid grid-cols-4 items-center" data-cy="song-item" data-danceability={song.danceability} data-popularity={song.popularity} data-tempo={song.tempo} data-segment={song.segment}>
+                              <div className="flex-1 grid grid-cols-[2fr_3fr_1fr_80px] items-center gap-4" data-cy="song-item" data-danceability={song.danceability} data-popularity={song.popularity} data-tempo={song.tempo} data-segment={song.segment}>
                                 <div>{song.artists}</div>
                                 <div>{song.track_name}</div>
+                                <div>{song.track_genre}</div>
                                 <div className="text-right">{Math.round(song.duration_ms / 1000 / 60)}m</div>
                               </div>
                             </div>
