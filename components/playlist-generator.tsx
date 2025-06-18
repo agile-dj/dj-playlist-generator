@@ -56,38 +56,133 @@ export default function PlaylistGenerator() {
       danceability: state.danceability
     }
 
-    const weddingSegments = state.eventType === "wedding" 
+    const weddingSegments = state.eventType === "wedding"
       ? getWeddingSegments(weddingState)
       : []
 
-    const promises = state.eventType === "wedding"
-      ? weddingSegments.map(segment =>
-          filterSongs({
-            ...baseParams,
-            duration: segment.duration,
-            tempoRange: segment.tempoRange,
-            segment: segment.label
-          }).then(songs => ({ label: segment.label, songs }))
+    if (state.eventType === "wedding") {
+      // Step 1: gather all results for each segment (with possible duplicates between segments)
+      Promise.all(
+        weddingSegments.map(segment =>
+          (async () => {
+            const songs = await filterSongs({
+              ...baseParams,
+              duration: segment.duration,
+              tempoRange: segment.tempoRange,
+              segment: segment.label
+            })
+
+            const MIN_SONGS = 10
+            if (songs.length >= MIN_SONGS) return { label: segment.label, songs }
+
+            const fallbackSongs = await filterSongs({
+              ...baseParams,
+              genres: [], // remove genre filtering
+              duration: segment.duration,
+              tempoRange: segment.tempoRange,
+              segment: segment.label
+            })
+
+            const merged = [...songs]
+            for (const s of fallbackSongs) {
+              if (!merged.some(existing => existing.track_id === s.track_id)) {
+                merged.push(s)
+              }
+              if (merged.length >= MIN_SONGS) break
+            }
+
+            return { label: segment.label, songs: merged }
+          })()
         )
-      : [filterSongs({ ...baseParams, duration: state.duration }).then(songs => ({ label: "Full", songs }))]
+      )
+        .then(async rawSegmentResults => {
+          // Step 2: filter out duplicates across segments, async, with fallback if needed
+          const MIN_SONGS = 10
+          let usedTrackIds = new Set<string>()
+          const uniqueSegmentResults = await Promise.all(
+            rawSegmentResults.map(async ({ label, songs }, i) => {
+              const unique: typeof songs = []
 
-    Promise.all(promises)
-      .then(results => {
-        const combinedSongs = state.eventType === "wedding"
-          ? processWeddingSegments(weddingSegments, results)
-          : processRegularPlaylist(results)
+              for (const song of songs) {
+                const id = song.track_id
+                if (!id || usedTrackIds.has(id)) continue
+                usedTrackIds.add(id)
+                unique.push(song)
+              }
 
-        setState(prev => ({
-          ...prev,
-          filteredSongs: combinedSongs,
-          isGenerating: false,
-          showResults: true
-        }))
-      })
-      .catch(error => {
-        console.error('Error filtering songs:', error)
-        setState(prev => ({ ...prev, isGenerating: false }))
-      })
+              if (unique.length >= MIN_SONGS) return { label, songs: unique }
+
+              const fallbackSongs = await filterSongs({
+                ...baseParams,
+                genres: [],
+                duration: weddingSegments[i].duration,
+                tempoRange: weddingSegments[i].tempoRange,
+                segment: label
+              })
+
+              for (const song of fallbackSongs) {
+                const id = song.track_id
+                if (!id || usedTrackIds.has(id)) continue
+                usedTrackIds.add(id)
+                unique.push(song)
+                if (unique.length >= MIN_SONGS) break
+              }
+
+              if (unique.length === 0) {
+                console.warn(`[PlaylistGenerator] Segment "${label}" has 0 songs even after fallback.`)
+              }
+
+              return { label, songs: unique }
+            })
+          )
+          console.log("Segment Results:", uniqueSegmentResults)
+          const results = uniqueSegmentResults // make sure this includes all segments
+          const combinedSongs = processWeddingSegments(weddingSegments, results)
+
+          setState(prev => ({
+            ...prev,
+            filteredSongs: combinedSongs,
+            isGenerating: false,
+            showResults: true
+          }))
+        })
+        .catch(error => {
+          console.error('Error filtering songs:', error)
+          setState(prev => ({ ...prev, isGenerating: false }))
+        })
+    } else {
+      // Not a wedding: use old logic with fallback if not enough songs
+      const MIN_SONGS = 10
+      filterSongs({ ...baseParams, duration: state.duration })
+        .then(songs => {
+          if (songs.length >= MIN_SONGS) return songs
+          return filterSongs({ ...baseParams, genres: [], duration: state.duration })
+            .then(fallbackSongs => {
+              const merged = [...songs]
+              for (const s of fallbackSongs) {
+                if (!merged.some(existing => existing.track_id === s.track_id)) {
+                  merged.push(s)
+                }
+                if (merged.length >= MIN_SONGS) break
+              }
+              return merged
+            })
+        })
+        .then(songs => [{ label: "Full", songs }])
+        .then(results => {
+          const combinedSongs = processRegularPlaylist(results)
+          setState(prev => ({
+            ...prev,
+            filteredSongs: combinedSongs,
+            isGenerating: false,
+            showResults: true
+          }))
+        })
+        .catch(error => {
+          console.error('Error filtering songs:', error)
+          setState(prev => ({ ...prev, isGenerating: false }))
+        })
+    }
   }
 
   const handleBack = () => {
