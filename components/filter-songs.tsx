@@ -1,6 +1,6 @@
 import { SpotifySong } from '@/types/song'
 
-interface FilterParams {
+export interface FilterParams {
   eventType: string;
   genres: string[];
   popularity: number;

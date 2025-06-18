@@ -10,8 +10,9 @@ import { Slider } from "@/components/ui/slider"
 import { filterSongs } from "./filter-songs"
 import { eventTypes } from "./hardcoded-params"
 import { WeddingSegments, getWeddingSegments } from "./wedding-playlist/wedding-segments"
-import { processWeddingSegments, processRegularPlaylist } from "./playlist-utils"
+import { processWeddingSegments, processRegularPlaylist, generateWeddingPlaylist, generateRegularPlaylist } from "./playlist-utils"
 import { PlaylistState, WeddingSegmentState } from "@/types/playlist"
+import { SpotifySong } from "@/types/song"
 
 const initialWeddingState: WeddingSegmentState = {
   receptionTempo: "",
@@ -61,84 +62,8 @@ export default function PlaylistGenerator() {
       : []
 
     if (state.eventType === "wedding") {
-      // Step 1: gather all results for each segment (with possible duplicates between segments)
-      Promise.all(
-        weddingSegments.map(segment =>
-          (async () => {
-            const songs = await filterSongs({
-              ...baseParams,
-              duration: segment.duration,
-              tempoRange: segment.tempoRange,
-              segment: segment.label
-            })
-
-            const MIN_SONGS = 10
-            if (songs.length >= MIN_SONGS) return { label: segment.label, songs }
-
-            const fallbackSongs = await filterSongs({
-              ...baseParams,
-              genres: [], // remove genre filtering
-              duration: segment.duration,
-              tempoRange: segment.tempoRange,
-              segment: segment.label
-            })
-
-            const merged = [...songs]
-            for (const s of fallbackSongs) {
-              if (!merged.some(existing => existing.track_id === s.track_id)) {
-                merged.push(s)
-              }
-              if (merged.length >= MIN_SONGS) break
-            }
-
-            return { label: segment.label, songs: merged }
-          })()
-        )
-      )
-        .then(async rawSegmentResults => {
-          // Step 2: filter out duplicates across segments, async, with fallback if needed
-          const MIN_SONGS = 10
-          let usedTrackIds = new Set<string>()
-          const uniqueSegmentResults = await Promise.all(
-            rawSegmentResults.map(async ({ label, songs }, i) => {
-              const unique: typeof songs = []
-
-              for (const song of songs) {
-                const id = song.track_id
-                if (!id || usedTrackIds.has(id)) continue
-                usedTrackIds.add(id)
-                unique.push(song)
-              }
-
-              if (unique.length >= MIN_SONGS) return { label, songs: unique }
-
-              const fallbackSongs = await filterSongs({
-                ...baseParams,
-                genres: [],
-                duration: weddingSegments[i].duration,
-                tempoRange: weddingSegments[i].tempoRange,
-                segment: label
-              })
-
-              for (const song of fallbackSongs) {
-                const id = song.track_id
-                if (!id || usedTrackIds.has(id)) continue
-                usedTrackIds.add(id)
-                unique.push(song)
-                if (unique.length >= MIN_SONGS) break
-              }
-
-              if (unique.length === 0) {
-                console.warn(`[PlaylistGenerator] Segment "${label}" has 0 songs even after fallback.`)
-              }
-
-              return { label, songs: unique }
-            })
-          )
-          console.log("Segment Results:", uniqueSegmentResults)
-          const results = uniqueSegmentResults // make sure this includes all segments
-          const combinedSongs = processWeddingSegments(weddingSegments, results)
-
+      generateWeddingPlaylist(weddingSegments, baseParams, filterSongs)
+        .then((combinedSongs: SpotifySong[]) => {
           setState(prev => ({
             ...prev,
             filteredSongs: combinedSongs,
@@ -151,26 +76,8 @@ export default function PlaylistGenerator() {
           setState(prev => ({ ...prev, isGenerating: false }))
         })
     } else {
-      // Not a wedding: use old logic with fallback if not enough songs
-      const MIN_SONGS = 10
-      filterSongs({ ...baseParams, duration: state.duration })
-        .then(songs => {
-          if (songs.length >= MIN_SONGS) return songs
-          return filterSongs({ ...baseParams, genres: [], duration: state.duration })
-            .then(fallbackSongs => {
-              const merged = [...songs]
-              for (const s of fallbackSongs) {
-                if (!merged.some(existing => existing.track_id === s.track_id)) {
-                  merged.push(s)
-                }
-                if (merged.length >= MIN_SONGS) break
-              }
-              return merged
-            })
-        })
-        .then(songs => [{ label: "Full", songs }])
-        .then(results => {
-          const combinedSongs = processRegularPlaylist(results)
+      generateRegularPlaylist(state.duration, baseParams, filterSongs)
+        .then((combinedSongs: SpotifySong[]) => {
           setState(prev => ({
             ...prev,
             filteredSongs: combinedSongs,
@@ -203,10 +110,10 @@ export default function PlaylistGenerator() {
               <div className="space-y-8">
                 <div className="space-y-4">
                   <label className="text-lg font-medium text-violet-300">Event Type</label>
-                  <Select 
-                  value={state.eventType} 
-                  onValueChange={(value) => setState(prev => ({ ...prev, eventType: value }))} 
-                  data-cy="event-type-select">
+                  <Select
+                    value={state.eventType}
+                    onValueChange={(value) => setState(prev => ({ ...prev, eventType: value }))}
+                    data-cy="event-type-select">
                     <SelectTrigger className="h-14 w-full border-0 bg-zinc-800 text-base text-violet-300 focus:outline-none" data-cy="event-type-trigger">
                       <SelectValue placeholder="Select event type" className="text-white" />
                     </SelectTrigger>
@@ -303,51 +210,44 @@ export default function PlaylistGenerator() {
                   </div>
                 </div>
 
-                <div className="space-y-4">
-                  <label className="text-lg font-medium text-violet-300">Playlist Length</label>
-                  {state.eventType !== "wedding" ? (
+                {state.eventType !== "wedding" && (
+                  <div className="space-y-4">
+                    <label className="text-lg font-medium text-violet-300">Playlist Length</label>
                     <div className="grid grid-cols-6 gap-2">
                       {[30, 60, 90, 120, 150, 180].map((mins) => {
-                        const label = mins < 60
-                          ? `${mins}m`
-                          : mins % 60 === 0
-                            ? `${mins / 60}h`
-                            : `${Math.floor(mins / 60)}.${(mins % 60) / 60 * 10}h`
+                        const label =
+                          mins < 60
+                            ? `${mins}m`
+                            : mins % 60 === 0
+                              ? `${mins / 60}h`
+                              : `${Math.floor(mins / 60)}.${(mins % 60) / 60 * 10}h`;
 
                         return (
                           <button
                             key={mins}
                             onClick={() => setState(prev => ({ ...prev, duration: mins }))}
                             className={`sm:h-14 h-10 rounded-lg text-base font-medium transition-all ${state.duration === mins
-                              ? 'bg-gradient-to-r from-violet-600 to-cyan-500 text-white'
-                              : 'bg-zinc-800 text-violet-300 hover:bg-zinc-700'
+                                ? 'bg-gradient-to-r from-violet-600 to-cyan-500 text-white'
+                                : 'bg-zinc-800 text-violet-300 hover:bg-zinc-700'
                               }`}
                           >
                             {label}
                           </button>
-                        )
+                        );
                       })}
                     </div>
-                  ) : (
-                    <div className="pt-2">
-                      <Slider
-                        value={[state.weddingSegments.receptionDuration + state.weddingSegments.ceremonyDuration + state.weddingSegments.dancingDuration]}
-                        disabled
-                        min={10}
-                        max={300}
-                        step={5}
-                        className="w-full opacity-70"
-                      />
-                      <span className="text-sm text-violet-400">
-                        Total Duration: {state.weddingSegments.receptionDuration + state.weddingSegments.ceremonyDuration + state.weddingSegments.dancingDuration} minutes
-                      </span>
-                    </div>
-                  )}
-                </div>
+                  </div>
+                )}
+
                 <Button
                   data-cy="generate-button"
                   onClick={handleGenerate}
-                  disabled={!state.eventType || state.genres.length === 0 || state.duration === 0 || state.isGenerating}
+                  disabled={
+                    !state.eventType ||
+                    state.genres.length === 0 ||
+                    state.duration === 0 ||
+                    state.isGenerating
+                  }
                   className="mt-6 h-14 w-full bg-gradient-to-r from-violet-600 to-cyan-500 text-base font-medium text-white hover:from-violet-700 hover:to-cyan-600"
                 >
                   {state.isGenerating ? (

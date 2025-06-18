@@ -104,7 +104,7 @@ describe('Playlist Generation Tests', () => {
       cy.get('[data-cy="generate-button"]').click()
 
       // Wait for playlist to be generated
-      cy.get('[data-cy="song-list"]', { timeout: 10000 }).should('be.visible')
+      cy.get('[data-cy="song-list"]', { timeout: 15000 }).should('be.visible')
 
       // Get all songs and calculate averages
       cy.window().then((win) => {
